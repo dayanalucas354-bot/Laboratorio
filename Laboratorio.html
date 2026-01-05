@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Lab 1 – Crear una Clase</title>
+
+<style>
+:root {
+  --primary: #2563eb;
+  --success: #16a34a;
+  --error: #dc2626;
+  --bg: #f8fafc;
+  --panel: #ffffff;
+  --border: #e5e7eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, Arial, sans-serif;
+  height: 100vh;
+  display: flex;
+  background: var(--bg);
+}
+
+/* Paneles */
+.panel {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+#left {
+  width: 30%;
+  background: #f1f5f9;
+  border-right: 1px solid var(--border);
+}
+
+#editor {
+  width: 40%;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+}
+
+#right {
+  width: 30%;
+  background: var(--panel);
+}
+
+/* Títulos */
+h2, h3 {
+  margin-top: 0;
+  color: var(--primary);
+}
+
+/* Editor */
+textarea {
+  width: 100%;
+  height: 80%;
+  resize: none;
+  font-family: Consolas, monospace;
+  font-size: 14px;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+/* Botón */
+button {
+  margin-top: 12px;
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: bold;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+/* Tests */
+.test {
+  margin: 6px 0;
+  padding: 6px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.ok {
+  color: var(--success);
+}
+
+.fail {
+  color: var(--error);
+}
+
+/* Salida */
+pre {
+  background: #020617;
+  color: #e5e7eb;
+  padding: 12px;
+  border-radius: 6px;
+  min-height: 120px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Panel izquierdo -->
+<div id="left" class="panel">
+  <h2>Lab 1: Crear una Clase</h2>
+
+  <p><strong>Objetivo:</strong></p>
+  <ul>
+    <li>Crear una clase <strong>Persona</strong>.</li>
+    <li>Definir los atributos <em>nombre</em> y <em>edad</em>.</li>
+    <li>Implementar el método <strong>presentarse()</strong>.</li>
+  </ul>
+
+  <h3>Pruebas automáticas</h3>
+  <div id="test1" class="test">🔲 La clase Persona existe.</div>
+  <div id="test2" class="test">🔲 Tiene los atributos nombre y edad.</div>
+  <div id="test3" class="test">🔲 Tiene el método presentarse().</div>
+
+  <button onclick="runTests()">▶ Ejecutar pruebas</button>
+</div>
+
+<!-- Editor -->
+<div id="editor" class="panel">
+  <h3>Código del estudiante</h3>
+  <textarea id="code">
+// Escribe tu código aquí
+class Persona {
+  constructor(nombre, edad) {
+    this.nombre = nombre;
+    this.edad = edad;
+  }
+
+  presentarse() {
+    return `Hola, soy ${this.nombre} y tengo ${this.edad} años`;
+  }
+}
+  </textarea>
+</div>
+
+<!-- Panel derecho -->
+<div id="right" class="panel">
+  <h3>Salida</h3>
+  <pre id="output">Ejecuta las pruebas para ver el resultado.</pre>
+</div>
+
+<script>
+function runTests() {
+  const output = document.getElementById("output");
+  output.textContent = "";
+
+  // Reset tests
+  resetTest("test1");
+  resetTest("test2");
+  resetTest("test3");
+
+  try {
+    const studentCode = document.getElementById("code").value;
+
+    // Ejecutar código del estudiante en contexto controlado
+    const sandbox = {};
+    const wrappedCode = `
+      ${studentCode}
+      sandbox.Persona = Persona;
+    `;
+    new Function("sandbox", wrappedCode)(sandbox);
+
+    const Persona = sandbox.Persona;
+
+    // Test 1
+    if (typeof Persona === "function") {
+      pass("test1", "✔ La clase Persona existe.");
+    } else {
+      fail("test1", "✘ No existe la clase Persona.");
+      return;
+    }
+
+    const persona = new Persona("Ana", 20);
+
+    // Test 2
+    if ("nombre" in persona && "edad" in persona) {
+      pass("test2", "✔ Tiene los atributos nombre y edad.");
+    } else {
+      fail("test2", "✘ Faltan atributos.");
+    }
+
+    // Test 3
+    if (typeof persona.presentarse === "function") {
+      pass("test3", "✔ Tiene el método presentarse().");
+    } else {
+      fail("test3", "✘ Falta el método presentarse().");
+    }
+
+    output.textContent = persona.presentarse();
+
+  } catch (e) {
+    output.textContent = "❌ Error: " + e.message;
+  }
+}
+
+function pass(id, text) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.classList.add("ok");
+}
+
+function fail(id, text) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.classList.add("fail");
+}
+
+function resetTest(id) {
+  const el = document.getElementById(id);
+  el.classList.remove("ok", "fail");
+}
+</script>
+
+</body>
+</html>
