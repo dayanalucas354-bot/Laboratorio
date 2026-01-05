@@ -67,6 +67,18 @@ textarea {
   border: 1px solid var(--border);
   background: #0f172a;
   color: #e5e7eb;
+  transition: border 0.3s, background 0.3s;
+}
+
+/* Estados del editor */
+textarea.error {
+  border: 2px solid var(--error);
+  background: #450a0a;
+}
+
+textarea.ok {
+  border: 2px solid var(--success);
+  background: #052e16;
 }
 
 /* Botón */
@@ -160,57 +172,9 @@ class Persona {
 </div>
 
 <script>
-function runTests() {
-  const output = document.getElementById("output");
-  output.textContent = "";
-
-  // Reset tests
-  resetTest("test1");
-  resetTest("test2");
-  resetTest("test3");
-
-  try {
-    const studentCode = document.getElementById("code").value;
-
-    // Ejecutar código del estudiante en contexto controlado
-    const sandbox = {};
-    const wrappedCode = `
-      ${studentCode}
-      sandbox.Persona = Persona;
-    `;
-    new Function("sandbox", wrappedCode)(sandbox);
-
-    const Persona = sandbox.Persona;
-
-    // Test 1
-    if (typeof Persona === "function") {
-      pass("test1", "✔ La clase Persona existe.");
-    } else {
-      fail("test1", "✘ No existe la clase Persona.");
-      return;
-    }
-
-    const persona = new Persona("Ana", 20);
-
-    // Test 2
-    if ("nombre" in persona && "edad" in persona) {
-      pass("test2", "✔ Tiene los atributos nombre y edad.");
-    } else {
-      fail("test2", "✘ Faltan atributos.");
-    }
-
-    // Test 3
-    if (typeof persona.presentarse === "function") {
-      pass("test3", "✔ Tiene el método presentarse().");
-    } else {
-      fail("test3", "✘ Falta el método presentarse().");
-    }
-
-    output.textContent = persona.presentarse();
-
-  } catch (e) {
-    output.textContent = "❌ Error: " + e.message;
-  }
+function resetTest(id) {
+  const el = document.getElementById(id);
+  el.classList.remove("ok", "fail");
 }
 
 function pass(id, text) {
@@ -225,11 +189,79 @@ function fail(id, text) {
   el.classList.add("fail");
 }
 
-function resetTest(id) {
-  const el = document.getElementById(id);
-  el.classList.remove("ok", "fail");
+function highlightErrorLine(textarea, lineNumber) {
+  const lines = textarea.value.split("\n");
+  if (!lines[lineNumber - 1]) return;
+  lines[lineNumber - 1] = "❌ " + lines[lineNumber - 1];
+  textarea.value = lines.join("\n");
+}
+
+function runTests() {
+  const output = document.getElementById("output");
+  const textarea = document.getElementById("code");
+
+  textarea.classList.remove("error", "ok");
+  output.textContent = "";
+
+  resetTest("test1");
+  resetTest("test2");
+  resetTest("test3");
+
+  try {
+    const studentCode = textarea.value;
+
+    const sandbox = {};
+    const wrappedCode = `
+      ${studentCode}
+
+      if (typeof Persona !== "function") {
+        throw new Error("Debes definir la clase Persona");
+      }
+
+      sandbox.Persona = Persona;
+    `;
+
+    new Function("sandbox", wrappedCode)(sandbox);
+
+    const Persona = sandbox.Persona;
+    const persona = new Persona("Ana", 20);
+
+    pass("test1", "✔ La clase Persona existe.");
+
+    if ("nombre" in persona && "edad" in persona) {
+      pass("test2", "✔ Tiene los atributos nombre y edad.");
+    } else {
+      throw new Error("Los atributos nombre y edad son obligatorios");
+    }
+
+    if (typeof persona.presentarse === "function") {
+      pass("test3", "✔ Tiene el método presentarse().");
+    } else {
+      throw new Error("Debes crear el método presentarse()");
+    }
+
+    textarea.classList.add("ok");
+    output.textContent =
+      "✅ Todo correcto\n\n" + persona.presentarse();
+
+  } catch (e) {
+    textarea.classList.add("error");
+
+    let lineInfo = "";
+    const match = e.stack && e.stack.match(/<anonymous>:(\d+):\d+/);
+
+    if (match) {
+      const lineNumber = parseInt(match[1]) - 2;
+      lineInfo = ` (línea ${lineNumber})`;
+      highlightErrorLine(textarea, lineNumber);
+    }
+
+    output.textContent =
+      "❌ Error" + lineInfo + ":\n" + e.message;
+  }
 }
 </script>
 
 </body>
 </html>
+
